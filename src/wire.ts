@@ -1,31 +1,23 @@
-function toSnake(key: string): string {
-  return key.replace(/[A-Z]/g, (m) => "_" + m.toLowerCase());
-}
-
-function toCamel(key: string): string {
-  return key.replace(/_([a-z0-9])/g, (_, c: string) => c.toUpperCase());
-}
-
-export function snakeify(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(snakeify);
-  if (value && typeof value === "object") {
+export function snake(v: unknown): unknown {
+  if (Array.isArray(v)) return v.map(snake);
+  if (v && typeof v === "object") {
     const out: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(value)) {
-      out[toSnake(k)] = snakeify(v);
+    for (const [k, val] of Object.entries(v)) {
+      out[k.replace(/[A-Z]/g, (m) => "_" + m.toLowerCase())] = snake(val);
     }
     return out;
   }
-  return value;
+  return v;
 }
 
-export function camelify(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(camelify);
-  if (value && typeof value === "object") {
+export function camel(v: unknown): unknown {
+  if (Array.isArray(v)) return v.map(camel);
+  if (v && typeof v === "object") {
     const out: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(value)) {
-      out[toCamel(k)] = camelify(v);
+    for (const [k, val] of Object.entries(v)) {
+      out[k.replace(/_([a-z0-9])/g, (_, c: string) => c.toUpperCase())] = camel(val);
     }
     return out;
   }
-  return value;
+  return v;
 }
