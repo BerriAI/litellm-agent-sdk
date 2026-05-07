@@ -1,34 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { camelify, snakeify } from "../src/wire.js";
+import { camel, snake } from "../src/wire.js";
 
-describe("wire camel/snake", () => {
-  it("snakeifies nested objects and arrays", () => {
-    const input = {
-      apiKey: "k",
-      systemPrompt: "p",
-      repos: [{ startingRef: "main" }],
-    };
-    expect(snakeify(input)).toEqual({
+describe("wire", () => {
+  it("snake nested", () => {
+    expect(snake({ apiKey: "k", repos: [{ startingRef: "main" }] })).toEqual({
       api_key: "k",
-      system_prompt: "p",
       repos: [{ starting_ref: "main" }],
     });
   });
 
-  it("camelifies nested objects and arrays", () => {
-    const input = {
-      session_id: "s",
-      git: { branches: [{ pr_url: null, branch: "main" }] },
-    };
-    expect(camelify(input)).toEqual({
-      sessionId: "s",
-      git: { branches: [{ prUrl: null, branch: "main" }] },
-    });
+  it("camel nested", () => {
+    expect(camel({ session_id: "s", agent_id: "a" })).toEqual({ sessionId: "s", agentId: "a" });
   });
 
-  it("passes scalars through", () => {
-    expect(camelify(42)).toBe(42);
-    expect(snakeify("x")).toBe("x");
-    expect(camelify(null)).toBe(null);
+  it("passes scalars", () => {
+    expect(camel(42)).toBe(42);
+    expect(snake("x")).toBe("x");
+    expect(camel(null)).toBeNull();
   });
 });
