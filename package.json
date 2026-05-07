@@ -1,0 +1,60 @@
+{
+  "name": "@litellm/agent-sdk",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for LiteLLM Agents — Agent → Session → Run",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BerriAI/litellm-agent-sdk.git"
+  },
+  "homepage": "https://github.com/BerriAI/litellm-agent-sdk",
+  "bugs": {
+    "url": "https://github.com/BerriAI/litellm-agent-sdk/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "dependencies": {
+    "eventsource-parser": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "litellm",
+    "agent",
+    "sdk",
+    "ai",
+    "llm",
+    "claude",
+    "openai"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}
