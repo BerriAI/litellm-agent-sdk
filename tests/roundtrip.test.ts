@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { Agent, type RunEvent } from "../src/index.js";
+import { Agent, type SessionEvent } from "../src/index.js";
 import { MockProxy } from "./mock-proxy.js";
 
 let proxy: MockProxy;
@@ -16,25 +16,29 @@ describe("roundtrip", () => {
     const agent = await Agent.create({
       apiKey: "k",
       baseUrl,
+      model: "anthropic/claude-haiku-4-5",
+      templateId: "tpl_smoke",
       name: "x",
-      model: { id: "noop" },
-      systemPrompt: "p",
+      prompt: "be terse",
     });
     expect(agent.id).toMatch(/^agent_/);
+    expect(agent.model).toBe("anthropic/claude-haiku-4-5");
+    expect(agent.templateId).toBe("tpl_smoke");
 
-    const session = await agent.createSession({
-      repos: [{ url: "https://github.com/me/r", startingRef: "main" }],
-    });
+    const session = await agent.createSession({ initialPrompt: "hi" });
     expect(session.agentId).toBe(agent.id);
+    expect(session.status).toBe("ready");
 
-    const run = await session.send("hi");
-    const events: RunEvent[] = [];
-    for await (const ev of run.stream()) events.push(ev);
+    const reply = await session.send("hello?");
+    expect(reply).toEqual({ text: "echo: hello?" });
+
+    const events: SessionEvent[] = [];
+    for await (const ev of session.events()) events.push(ev);
     expect(events.map((e) => e.type)).toEqual([
-      "run.started",
+      "session.started",
       "message.delta",
       "message.delta",
-      "run.completed",
+      "message.completed",
     ]);
 
     const again = await agent.getSession(session.id);
@@ -43,7 +47,12 @@ describe("roundtrip", () => {
 
   it("rejects on bad apiKey", async () => {
     await expect(
-      Agent.create({ apiKey: "wrong", baseUrl, name: "x", model: { id: "n" }, systemPrompt: "p" }),
+      Agent.create({
+        apiKey: "wrong",
+        baseUrl,
+        model: "noop",
+        templateId: "tpl",
+      }),
     ).rejects.toThrow(/401/);
   });
 });
