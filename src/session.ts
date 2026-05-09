@@ -1,29 +1,52 @@
 import { type Client, request } from "./http.js";
-import { Run } from "./run.js";
+import { streamSessionEvents } from "./sse.js";
+import type { SessionEvent, SessionSnapshot } from "./types.js";
 
 export class Session {
-  constructor(
-    readonly id: string,
-    readonly agentId: string,
-    private readonly c: Client,
-  ) {}
+  readonly id: string;
+  readonly agentId: string;
+  status: string;
+  sandboxUrl?: string;
+  response?: Record<string, unknown>;
 
-  async send(prompt: string): Promise<Run> {
-    const r = await request<{ id: string }>(
-      this.c,
-      "POST",
-      `/v1/sessions/${this.id}/prompt_async`,
-      { text: prompt },
-    );
-    return new Run(r.id, this.id, this.c);
+  constructor(
+    snap: SessionSnapshot,
+    private readonly c: Client,
+  ) {
+    this.id = snap.id;
+    this.agentId = snap.agentId;
+    this.status = snap.status;
+    this.sandboxUrl = snap.sandboxUrl;
+    this.response = snap.response;
   }
 
-  async followup(prompt: string): Promise<void> {
-    await request<void>(
+  /** POST /sessions/:id/message — blocks until the harness returns the reply. */
+  send(text: string): Promise<Record<string, unknown>> {
+    return request<Record<string, unknown>>(
       this.c,
       "POST",
-      `/v1/sessions/${this.id}/prompt_async`,
-      { text: prompt, followup: true },
+      `/v1/managed_agents/sessions/${this.id}/message`,
+      { text },
     );
+  }
+
+  /** GET /sessions/:id/events — SSE passthrough from the sandbox harness. */
+  events(opts?: { signal?: AbortSignal }): AsyncIterable<SessionEvent> {
+    const c = this.c;
+    const id = this.id;
+    const signal = opts?.signal;
+    return { [Symbol.asyncIterator]: () => streamSessionEvents(c, id, signal) };
+  }
+
+  async refresh(): Promise<this> {
+    const snap = await request<SessionSnapshot>(
+      this.c,
+      "GET",
+      `/v1/managed_agents/sessions/${this.id}`,
+    );
+    this.status = snap.status;
+    this.sandboxUrl = snap.sandboxUrl;
+    this.response = snap.response;
+    return this;
   }
 }
