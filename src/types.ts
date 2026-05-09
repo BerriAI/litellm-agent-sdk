@@ -50,6 +50,8 @@ export interface AgentCreateOptions extends ClientOptions {
   /** See `litellmApiKey`. */
   litellmApiBase?: string;
   pfpUrl?: string;
+  /** Optional. Picks the harness binary the managed platform spawns. Default `opencode`; other valid value: `claude-agent-sdk`. */
+  harnessId?: string;
 }
 
 export interface CreateSessionOptions {
