@@ -45,6 +45,27 @@ describe("roundtrip", () => {
     expect(again.id).toBe(session.id);
   });
 
+  it("forwards harnessId as snake_case harness_id on the wire", async () => {
+    await Agent.create({
+      apiKey: "k",
+      baseUrl,
+      model: "anthropic/claude-haiku-4-5",
+      templateId: "tpl",
+      harnessId: "claude-agent-sdk",
+    });
+    expect(proxy.lastCreateAgentBody?.harness_id).toBe("claude-agent-sdk");
+  });
+
+  it("omits harness_id when harnessId is unset (server picks default)", async () => {
+    await Agent.create({
+      apiKey: "k",
+      baseUrl,
+      model: "anthropic/claude-haiku-4-5",
+      templateId: "tpl",
+    });
+    expect(proxy.lastCreateAgentBody).not.toHaveProperty("harness_id");
+  });
+
   it("rejects on bad apiKey", async () => {
     await expect(
       Agent.create({
