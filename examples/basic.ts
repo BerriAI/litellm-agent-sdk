@@ -1,11 +1,16 @@
 import { Agent } from "@litellm/agent-sdk";
 
 const agent = await Agent.create({
-  apiKey: process.env.LITELLM_API_KEY!,
-  baseUrl: process.env.LITELLM_BASE_URL!,
+  // LAP control plane (what this SDK talks to).
+  apiKey: process.env.LITELLM_AGENT_PLATFORM_KEY!,
+  baseUrl: process.env.LITELLM_AGENT_PLATFORM_URL!,
   model: "anthropic/claude-haiku-4-5",
   templateId: process.env.LITELLM_TEMPLATE_ID!,
   prompt: "You are a senior reviewer.",
+  // Optional gateway override — forwarded into the harness for actual LLM
+  // completions. Leave unset to use LAP's server-side default.
+  litellmApiKey: process.env.LITELLM_GATEWAY_KEY,
+  litellmApiBase: process.env.LITELLM_GATEWAY_URL,
 });
 
 // Boots a fresh Fargate task in your VPC. Returns once the sandbox is ready
