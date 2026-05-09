@@ -37,6 +37,7 @@ export class Agent {
       litellmApiKey: opts.litellmApiKey,
       litellmApiBase: opts.litellmApiBase,
       pfpUrl: opts.pfpUrl,
+      harnessId: opts.harnessId,
     });
     return new Agent(a.id, a.model, a.templateId, a.name ?? null, c);
   }
