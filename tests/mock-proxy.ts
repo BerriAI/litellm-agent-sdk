@@ -2,28 +2,28 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { randomUUID } from "node:crypto";
 import { URL } from "node:url";
 
-interface Run {
+interface SessionRow {
   id: string;
-  session_id: string;
-  status: "running" | "completed";
-  events: { seq: number; type: string; data: unknown }[];
-  followups: string[];
+  agent_id: string;
+  status: "ready" | "creating" | "failed";
+  sandbox_url?: string;
+  messages: { text: string; reply: Record<string, unknown> }[];
+  events: Record<string, unknown>[];
 }
 
 export interface MockOptions {
   apiKey?: string;
-  // Drop the SSE socket after this many events on the next /events call (single-shot).
+  /** Drop the SSE socket after this many events on the next /events call (single-shot). */
   dropAfter?: number;
-  // If true, send() leaves the run "running" with no events (so followups can land).
-  noAutoEmit?: boolean;
+  /** If set, /sessions/:id/events will use these events instead of the session's queue. */
+  sessionEvents?: Record<string, unknown>[];
 }
 
 export class MockProxy {
   private server: Server;
   private port = 0;
-  agents = new Map<string, { id: string; name: string }>();
-  sessions = new Map<string, { id: string; agent_id: string }>();
-  runs = new Map<string, Run>();
+  agents = new Map<string, { id: string; name: string | null; model: string; template_id: string }>();
+  sessions = new Map<string, SessionRow>();
   opts: MockOptions;
 
   constructor(opts: MockOptions = {}) {
@@ -68,77 +68,86 @@ export class MockProxy {
     const p = url.pathname;
     const m = req.method;
 
-    if (m === "POST" && p === "/v1/agents") {
+    if (m === "POST" && p === "/v1/managed_agents/agents") {
       const b = await this.body(req);
       const id = `agent_${randomUUID()}`;
-      this.agents.set(id, { id, name: String(b.name ?? "") });
-      return this.json(res, 200, { id, name: b.name });
+      const row = {
+        id,
+        name: (b.name as string | undefined) ?? null,
+        model: String(b.model ?? ""),
+        template_id: String(b.template_id ?? ""),
+      };
+      this.agents.set(id, row);
+      return this.json(res, 200, row);
     }
 
-    let mt = p.match(/^\/v1\/agents\/([^/]+)\/sessions$/);
+    let mt = p.match(/^\/v1\/managed_agents\/agents\/([^/]+)\/session$/);
     if (mt && m === "POST") {
       const agentId = mt[1]!;
       if (!this.agents.has(agentId)) return this.json(res, 404, {});
       const id = `session_${randomUUID()}`;
-      this.sessions.set(id, { id, agent_id: agentId });
-      return this.json(res, 200, { id, agent_id: agentId });
+      const row: SessionRow = {
+        id,
+        agent_id: agentId,
+        status: "ready",
+        sandbox_url: `http://sandbox.test/${id}`,
+        messages: [],
+        events: [],
+      };
+      this.sessions.set(id, row);
+      return this.json(res, 200, {
+        id,
+        agent_id: agentId,
+        status: row.status,
+        sandbox_url: row.sandbox_url,
+      });
     }
 
-    mt = p.match(/^\/v1\/sessions\/([^/]+)$/);
+    mt = p.match(/^\/v1\/managed_agents\/sessions\/([^/]+)$/);
     if (mt && m === "GET") {
       const s = this.sessions.get(mt[1]!);
-      return s ? this.json(res, 200, s) : this.json(res, 404, {});
+      return s
+        ? this.json(res, 200, {
+            id: s.id,
+            agent_id: s.agent_id,
+            status: s.status,
+            sandbox_url: s.sandbox_url,
+          })
+        : this.json(res, 404, {});
     }
 
-    mt = p.match(/^\/v1\/sessions\/([^/]+)\/prompt_async$/);
+    mt = p.match(/^\/v1\/managed_agents\/sessions\/([^/]+)\/message$/);
     if (mt && m === "POST") {
-      const sid = mt[1]!;
-      if (!this.sessions.has(sid)) return this.json(res, 404, {});
+      const s = this.sessions.get(mt[1]!);
+      if (!s) return this.json(res, 404, {});
       const b = await this.body(req);
-
-      if (b.followup) {
-        const active = [...this.runs.values()].reverse().find((r) => r.session_id === sid && r.status === "running");
-        if (!active) return this.json(res, 409, { error: "no_active_run" });
-        active.followups.push(String(b.text ?? ""));
-        res.statusCode = 204;
-        return res.end();
-      }
-
-      if ([...this.runs.values()].some((r) => r.session_id === sid && r.status === "running")) {
-        return this.json(res, 409, { error: "busy" });
-      }
-
-      const id = `run_${randomUUID()}`;
-      const run: Run = { id, session_id: sid, status: "running", events: [], followups: [] };
-      if (!this.opts.noAutoEmit) {
-        run.events = [
-          { seq: 0, type: "run.started", data: {} },
-          { seq: 1, type: "message.delta", data: { text: "hello " } },
-          { seq: 2, type: "message.delta", data: { text: "world" } },
-          { seq: 3, type: "run.completed", data: { result: "hello world" } },
-        ];
-        run.status = "completed";
-      }
-      this.runs.set(id, run);
-      return this.json(res, 200, { id, session_id: sid });
+      const reply = { text: `echo: ${String(b.text ?? "")}` };
+      s.messages.push({ text: String(b.text ?? ""), reply });
+      return this.json(res, 200, reply);
     }
 
-    mt = p.match(/^\/v1\/runs\/([^/]+)\/events$/);
+    mt = p.match(/^\/v1\/managed_agents\/sessions\/([^/]+)\/events$/);
     if (mt && m === "GET") {
-      const run = this.runs.get(mt[1]!);
-      if (!run) return this.json(res, 404, {});
-      const start = Number(url.searchParams.get("starting_seq") ?? 0);
+      const s = this.sessions.get(mt[1]!);
+      if (!s) return this.json(res, 404, {});
+      const events = this.opts.sessionEvents ?? [
+        { type: "session.started", session_id: s.id },
+        { type: "message.delta", text: "hello " },
+        { type: "message.delta", text: "world" },
+        { type: "message.completed", text: "hello world" },
+      ];
+
       res.statusCode = 200;
       res.setHeader("Content-Type", "text/event-stream");
       res.flushHeaders?.();
 
       const drop = this.opts.dropAfter ?? 0;
       let n = 0;
-      for (const ev of run.events.filter((e) => e.seq >= start)) {
-        res.write(`event: event\ndata: ${JSON.stringify(ev)}\n\n`);
+      for (const ev of events) {
+        res.write(`data: ${JSON.stringify(ev)}\n\n`);
         n++;
         if (drop > 0 && n >= drop) {
-          this.opts.dropAfter = 0; // single-shot
+          this.opts.dropAfter = 0;
           res.socket?.destroy();
           return;
         }

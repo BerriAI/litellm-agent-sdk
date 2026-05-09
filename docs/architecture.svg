@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 540" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="14" fill="#1d1d1f">
+  <rect width="1024" height="540" fill="#fafafa"/>
+
+  <!-- Title -->
+  <text x="512" y="56" text-anchor="middle" font-weight="600" font-size="18">
+    LiteLLM Agent SDK — managed agents run on your cloud
+  </text>
+  <text x="512" y="80" text-anchor="middle" fill="#6b6b6b" font-size="13">
+    No local workstation. No SaaS runtime. The proxy and the sandboxes live in your VPC.
+  </text>
+
+  <!-- Outer "Your Cloud" container -->
+  <rect x="48" y="112" width="928" height="280" rx="14" fill="#f1f1f0" stroke="#cfcfcc"/>
+  <text x="512" y="138" text-anchor="middle" font-weight="600" font-size="15">Your AWS account</text>
+
+  <!-- LiteLLM Proxy box -->
+  <rect x="80" y="160" width="280" height="208" rx="10" fill="#ffffff" stroke="#bdbdbd"/>
+  <text x="220" y="184" text-anchor="middle" font-weight="600">LiteLLM Proxy</text>
+  <text x="220" y="204" text-anchor="middle" fill="#6b6b6b" font-size="12">control plane · auth · routing</text>
+
+  <rect x="100" y="222" width="240" height="38" rx="7" fill="#fafafa" stroke="#d8d8d6"/>
+  <text x="220" y="246" text-anchor="middle" font-size="13">/v1/managed_agents/...</text>
+
+  <rect x="100" y="270" width="240" height="38" rx="7" fill="#fafafa" stroke="#d8d8d6"/>
+  <text x="220" y="294" text-anchor="middle" font-size="13">MCP servers (per agent)</text>
+
+  <rect x="100" y="318" width="240" height="38" rx="7" fill="#fafafa" stroke="#d8d8d6"/>
+  <text x="220" y="342" text-anchor="middle" font-size="13">100+ model providers</text>
+
+  <!-- Sandbox box -->
+  <rect x="408" y="160" width="540" height="208" rx="10" fill="#ffffff" stroke="#bdbdbd"/>
+  <text x="678" y="184" text-anchor="middle" font-weight="600">Fargate sandbox · per session</text>
+  <text x="678" y="204" text-anchor="middle" fill="#6b6b6b" font-size="12">isolated VM · cloned repo · short-lived</text>
+
+  <!-- Harness inside sandbox -->
+  <rect x="432" y="220" width="492" height="138" rx="8" fill="#fafafa" stroke="#d8d8d6" stroke-dasharray="4 4"/>
+  <text x="678" y="244" text-anchor="middle" font-weight="500">Harness (opencode)</text>
+
+  <rect x="456" y="262" width="220" height="42" rx="6" fill="#ffffff" stroke="#cfcfcc"/>
+  <text x="566" y="288" text-anchor="middle" font-size="13">Agent loop</text>
+
+  <rect x="688" y="262" width="220" height="42" rx="6" fill="#ffffff" stroke="#cfcfcc"/>
+  <text x="798" y="288" text-anchor="middle" font-size="13">MCP / tool calls</text>
+
+  <rect x="456" y="312" width="452" height="34" rx="6" fill="#ffffff" stroke="#cfcfcc"/>
+  <text x="682" y="333" text-anchor="middle" font-size="13">Cloned git repo · ephemeral filesystem</text>
+
+  <!-- Arrow proxy → sandbox -->
+  <path d="M 360 264 L 408 264" stroke="#999" stroke-width="1.6" fill="none" marker-end="url(#arrow)"/>
+  <text x="384" y="258" text-anchor="middle" font-size="11" fill="#6b6b6b">passthrough</text>
+
+  <!-- SDK / caller box outside the cloud -->
+  <rect x="288" y="420" width="448" height="84" rx="10" fill="#ffffff" stroke="#bdbdbd"/>
+  <text x="512" y="446" text-anchor="middle" font-weight="600">@litellm/agent-sdk · your service or laptop</text>
+  <text x="512" y="468" text-anchor="middle" fill="#6b6b6b" font-size="12">
+    Agent.create() · agent.createSession() · session.send() · session.events()
+  </text>
+  <text x="512" y="488" text-anchor="middle" fill="#6b6b6b" font-size="12">
+    holds API key · reconnects from anywhere
+  </text>
+
+  <!-- Arrow caller → proxy -->
+  <path d="M 350 420 L 250 380" stroke="#999" stroke-width="1.6" fill="none" marker-end="url(#arrow)"/>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#999"/>
+    </marker>
+  </defs>
+</svg>
