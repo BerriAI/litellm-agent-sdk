@@ -24,6 +24,8 @@ export class MockProxy {
   private port = 0;
   agents = new Map<string, { id: string; name: string | null; model: string; template_id: string }>();
   sessions = new Map<string, SessionRow>();
+  /** Raw body of the most recent POST /v1/managed_agents/agents. Tests assert wire shape against this. */
+  lastCreateAgentBody: Record<string, unknown> | null = null;
   opts: MockOptions;
 
   constructor(opts: MockOptions = {}) {
@@ -70,6 +72,7 @@ export class MockProxy {
 
     if (m === "POST" && p === "/v1/managed_agents/agents") {
       const b = await this.body(req);
+      this.lastCreateAgentBody = b;
       const id = `agent_${randomUUID()}`;
       const row = {
         id,
