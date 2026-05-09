@@ -6,8 +6,9 @@ TypeScript client for [LiteLLM managed agents](https://github.com/BerriAI/litell
 import { Agent } from "@litellm/agent-sdk";
 
 const agent = await Agent.create({
-  apiKey: process.env.LITELLM_API_KEY!,
-  baseUrl: process.env.LITELLM_BASE_URL!,
+  // LAP — control plane
+  apiKey: process.env.LITELLM_AGENT_PLATFORM_KEY!,
+  baseUrl: process.env.LITELLM_AGENT_PLATFORM_URL!,
   model: "anthropic/claude-haiku-4-5",
   templateId: "tpl_opencode_my_repo",
   prompt: "You are a senior reviewer.",
@@ -29,6 +30,32 @@ npm i @litellm/agent-sdk
 ```
 
 Node 20+. ESM only.
+
+## Two endpoints, two pairs of creds
+
+The SDK touches two URLs. Keep them straight:
+
+| Role | SDK option | Who calls it |
+| --- | --- | --- |
+| **LiteLLM Agent Platform** (LAP) — control plane | `apiKey` + `baseUrl` on `Agent.create` | the SDK (your process) |
+| **LiteLLM Gateway** — LLM completions backend | `litellmApiKey` + `litellmApiBase` on `Agent.create` *(optional)* | the harness *inside* the spawned sandbox |
+
+The gateway pair is **forwarded** to the harness via the agent template. The SDK never calls the gateway directly. Leave the gateway pair unset to use LAP's server-side default.
+
+```ts
+const agent = await Agent.create({
+  // LAP — what this SDK talks to
+  apiKey: process.env.LITELLM_AGENT_PLATFORM_KEY!,
+  baseUrl: process.env.LITELLM_AGENT_PLATFORM_URL!,
+  // Gateway — optional override for the LLM backend the harness uses.
+  // Forwarded onto the agent template; leave unset to inherit LAP's
+  // server-side default.
+  litellmApiKey: process.env.LITELLM_GATEWAY_KEY,
+  litellmApiBase: process.env.LITELLM_GATEWAY_URL,
+  model: "anthropic/claude-haiku-4-5",
+  templateId: "tpl_opencode_my_repo",
+});
+```
 
 ## API
 
