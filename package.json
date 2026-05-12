@@ -1,7 +1,7 @@
 {
   "name": "@litellm/agent-sdk",
-  "version": "0.1.0",
-  "description": "TypeScript SDK for LiteLLM Agents — Agent → Session → Run",
+  "version": "0.2.0",
+  "description": "TypeScript SDK for LiteLLM Agents \u2014 Agent \u2192 Session \u2192 Run",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -39,6 +39,7 @@
     "eventsource-parser": "^3.0.0"
   },
   "devDependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.139",
     "@types/node": "^22.0.0",
     "typescript": "^5.6.0",
     "vitest": "^2.1.0"
@@ -57,5 +58,8 @@
   ],
   "publishConfig": {
     "access": "public"
+  },
+  "peerDependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.139"
   }
 }
