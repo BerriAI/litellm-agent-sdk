@@ -129,7 +129,7 @@ export class MockProxy {
       return this.json(res, 200, reply);
     }
 
-    mt = p.match(/^\/v1\/managed_agents\/sessions\/([^/]+)\/events$/);
+    mt = p.match(/^\/v1\/managed_agents\/sessions\/([^/]+)\/(events|stream)$/);
     if (mt && m === "GET") {
       const s = this.sessions.get(mt[1]!);
       if (!s) return this.json(res, 404, {});
