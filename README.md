@@ -72,7 +72,7 @@ Auth: `Authorization: Bearer <apiKey>`. Wire format is snake_case; the SDK expos
 
 ## CLI (`@litellm/agent-cli`)
 
-An Ollama-style terminal CLI lives in `cli/`. Install it separately — no CLI deps bleed into the SDK.
+A terminal CLI lives in `cli/`. Install it separately — no CLI deps bleed into the SDK.
 
 ```
 npm i -g @litellm/agent-cli
