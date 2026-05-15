@@ -70,6 +70,61 @@ const agent = await Agent.create({
 
 Auth: `Authorization: Bearer <apiKey>`. Wire format is snake_case; the SDK exposes camelCase. `createSession` blocks while the proxy boots a Fargate task (~50–90s). `send` is synchronous — the proxy passes through to the harness and returns the reply.
 
+## CLI (`@litellm/agent-cli`)
+
+An Ollama-style terminal CLI lives in `cli/`. Install it separately — no CLI deps bleed into the SDK.
+
+```
+npm i -g @litellm/agent-cli
+```
+
+### Quickstart
+
+```sh
+# Save credentials once
+lap login
+
+# Spawn a session and start chatting
+lap run agt_abc123
+
+# With an opening prompt
+lap run agt_abc123 --prompt "Review the auth module"
+```
+
+### Commands
+
+| Command | What it does |
+|---|---|
+| `lap login` | Prompt for base URL + API key, verify, write to `~/.lap/config.json` |
+| `lap agents list` | Table of all agents (ID, name, model, template) |
+| `lap agents create` | Create an agent (`--model`, `--template`, `--name`, `--prompt`, …) |
+| `lap agents rm <id>` | Delete an agent |
+| `lap run <agent-id>` | Spawn a session, wait for cold-start, enter interactive REPL |
+| `lap ps` | List all sessions (ID, agent, status, age) |
+| `lap sessions attach <id>` | Re-attach to an existing session |
+| `lap sessions rm <id>` | Terminate a session |
+
+### REPL slash commands
+
+Inside `lap run` or `lap sessions attach`:
+
+| Command | Effect |
+|---|---|
+| `/quit` | Exit the REPL (session stays alive on server) |
+| `/id` | Print current session ID |
+| `/stream on` | Switch to SSE token streaming (uses `createClaudeStream`) |
+| `/stream off` | Switch back to blocking send (default) |
+
+### Config precedence
+
+```
+--base-url / --api-key flag  >  LAP_BASE_URL / LAP_API_KEY env  >  ~/.lap/config.json
+```
+
+### Cold-start
+
+`lap run` blocks while the Fargate sandbox boots (~60–120 s). A spinner shows elapsed time. Once ready the session stays warm until explicitly terminated.
+
 ## License
 
 MIT
